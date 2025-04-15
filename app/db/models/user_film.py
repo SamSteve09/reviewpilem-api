@@ -1,7 +1,5 @@
 from sqlmodel import Field, SQLModel
 from uuid import uuid4, UUID
-from sqlalchemy import Text
-from datetime import date
 from enum import Enum
 
 class UserFilmStatus(str, Enum):

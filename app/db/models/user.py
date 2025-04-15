@@ -1,8 +1,11 @@
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, Relationship
+from typing import List
 from uuid import uuid4, UUID
 from sqlalchemy import Text
 from datetime import date
 from enum import Enum
+from film import FilmModel
+from user_film import UserFilmModel
 
 class Role(str, Enum):
     USER = "user"
@@ -16,3 +19,7 @@ class UserModel(SQLModel,table = True):
     is_private: bool = Field(default=False)
     created_at: date = Field(default=date.today())
     role: Role = Field(default=Role.USER)
+    
+    films: List[FilmModel] = Relationship(back_populates="users", link_model=UserFilmModel)
+    
+    
