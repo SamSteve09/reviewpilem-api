@@ -9,9 +9,9 @@ class UserFilmStatus(str, Enum):
     ON_HOLD = "on_hold"
     DROPPED = "dropped"
 
-class UserFilmModel(SQLModel,table = True):
+class UserFilm(SQLModel,table = True):
     id: int = Field(default_factory=uuid4, primary_key=True)
     status: UserFilmStatus = Field()
-    user_id: UUID = Field(foreign_key="usermodel.id")
-    film_id: UUID = Field(foreign_key="filmmodel.id")
+    user_id: UUID = Field(foreign_key="user.id")
+    film_id: UUID = Field(foreign_key="film.id")
     progress: int = Field(default=0)
