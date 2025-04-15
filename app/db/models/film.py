@@ -1,5 +1,4 @@
 from sqlmodel import Field, SQLModel, Relationship
-from typing import List
 from uuid import uuid4, UUID
 from sqlalchemy import Text
 from datetime import date
@@ -23,5 +22,5 @@ class FilmModel(SQLModel,table = True):
     episode_count: int = Field(default=1)
     rating: float = Field(default=0,nullable=True)
     
-    genres: List[GenreModel] = Relationship(back_populates="films", link_model=GenreFilmModel)
-    users: List[UserModel] = Relationship(back_populates="films", link_model=UserFilmModel)
+    genres: list[GenreModel] = Relationship(back_populates="films", link_model=GenreFilmModel)
+    users: list[UserModel] = Relationship(back_populates="films", link_model=UserFilmModel)

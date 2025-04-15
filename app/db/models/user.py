@@ -1,5 +1,4 @@
 from sqlmodel import Field, SQLModel, Relationship
-from typing import List
 from uuid import uuid4, UUID
 from sqlalchemy import Text
 from datetime import date
@@ -20,6 +19,6 @@ class UserModel(SQLModel,table = True):
     created_at: date = Field(default=date.today())
     role: Role = Field(default=Role.USER)
     
-    films: List[FilmModel] = Relationship(back_populates="users", link_model=UserFilmModel)
+    films: list[FilmModel] = Relationship(back_populates="users", link_model=UserFilmModel)
     
     
