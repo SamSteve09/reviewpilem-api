@@ -1,7 +1,7 @@
 from sqlmodel import Field, SQLModel, Relationship
 from uuid import uuid4, UUID
 from datetime import date,datetime
-from typing import Text
+from sqlalchemy import Column,TEXT
 from app.enums import FilmStatus, Role, UserFilmStatus, ReactionType, FilmType
 
 class GenreFilm(SQLModel,table = True):
@@ -25,7 +25,7 @@ class User(SQLModel,table = True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     username: str = Field(min_length=1,max_length=255,unique=True,index=True)
     password_hash: str
-    bio: str | None = Field(default=None,nullable=True,sa_column_kwargs={"type_": Text})
+    bio: str | None = Field(default=None,sa_column=Column(TEXT, nullable=True))
     is_private: bool = Field(default=False)
     created_at: date = Field(default=date.today())
     role: Role = Field(default=Role.USER)
@@ -35,7 +35,7 @@ class User(SQLModel,table = True):
 class Film(SQLModel,table = True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     title: str = Field(min_length=1,max_length=255)
-    synopsis: str | None = Field(sa_column_kwargs={"type_": Text})
+    synopsis: str | None = Field(default=None,sa_column=Column(TEXT, nullable=True))
     release_date: date | None = Field(default=None, nullable=True)
     air_status: FilmStatus
     film_type: FilmType
@@ -59,7 +59,7 @@ class Review(SQLModel,table = True):
     # delete review if film is deleted from user list (implicitly delete if either film or user is also deleted)
     user_film_id: int = Field(foreign_key="userfilm.id",ondelete="CASCADE")
     rating: int = Field(ge=1, le=10)
-    comment: str | None = Field(sa_column_kwargs={"type_": Text})
+    comment: str | None = Field(default=None,sa_column=Column(TEXT, nullable=True))
     like_count: int = Field(default=0)
     dislike_count: int = Field(default=0)
     created_at: datetime = Field(default_factory=datetime.now)
