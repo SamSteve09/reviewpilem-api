@@ -45,6 +45,7 @@ class Film(SQLModel,table = True):
     
     genres: list["Genre"] = Relationship(back_populates="films", link_model=GenreFilm,cascade_delete=True)
     users: list["User"] = Relationship(back_populates="films", link_model=UserFilm,cascade_delete=True)
+    images: list["Image"] = Relationship(back_populates="film", cascade_delete=True)
 
 class Reaction(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -67,6 +68,14 @@ class Review(SQLModel,table = True):
     
     #user_films: "UserFilm" = Relationship(back_populates="reviews")
     reactions: list["Reaction"] = Relationship(back_populates="review",cascade_delete=True)
+    
+class Image(SQLModel,table = True):
+    id: int | None = Field(default=None, primary_key=True)
+    image_url: str = Field(min_length=1,max_length=255,unique=True)
+    film_id: UUID = Field(foreign_key="film.id", ondelete="CASCADE")
+    is_cover: bool = Field(default=False)
+    
+    film: Film = Relationship(back_populates="images")
     
 
     
