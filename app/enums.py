@@ -18,3 +18,7 @@ class UserFilmStatus(str, Enum):
 class ReactionType(str, Enum):
     LIKE = "like"
     DISLIKE = "dislike"
+    
+class FilmType(str, Enum):
+    MOVIE = "Movie"
+    SERIES = "Series"

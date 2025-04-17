@@ -2,7 +2,7 @@ from sqlmodel import Field, SQLModel, Relationship
 from uuid import uuid4, UUID
 from datetime import date,datetime
 from typing import Text
-from enums import FilmStatus, Role, UserFilmStatus, ReactionType
+from enums import FilmStatus, Role, UserFilmStatus, ReactionType, FilmType
 
 class GenreFilm(SQLModel,table = True):
     film_id: UUID = Field(primary_key=True, foreign_key="film.id",cascade_delete=True)
@@ -38,6 +38,7 @@ class Film(SQLModel,table = True):
     synopsis: str | None = Field(sa_column_kwargs={"type_": Text})
     release_date: date | None = Field(default=None, nullable=True)
     air_status: FilmStatus
+    film_type: FilmType
     episode_count: int | None = Field(default=None, nullable=True)
     rating: float | None = Field(default=None, ge=0, le=10, nullable=True)
     rating_count: int | None = Field(default=0, nullable=True)
