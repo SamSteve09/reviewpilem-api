@@ -19,7 +19,7 @@ class Genre(SQLModel,table = True):
     id: int = Field(default=None, primary_key=True)
     genre_name: str = Field(min_length=1,max_length=255,unique=True)
     
-    films: list["Film"] = Relationship(back_populates="genres", link_model=GenreFilm,cascade_delete=True)
+    films: list["Film"] = Relationship(back_populates="genres", link_model=GenreFilm)
     
 class User(SQLModel,table = True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
@@ -30,7 +30,7 @@ class User(SQLModel,table = True):
     created_at: date = Field(default=date.today())
     role: Role = Field(default=Role.USER)
     
-    films: list["Film"] = Relationship(back_populates="users", link_model=UserFilm,cascade_delete=True)
+    films: list["Film"] = Relationship(back_populates="users", link_model=UserFilm)
     
 class Film(SQLModel,table = True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
@@ -43,8 +43,8 @@ class Film(SQLModel,table = True):
     rating: float | None = Field(default=None, ge=0, le=10, nullable=True)
     rating_count: int | None = Field(default=0, nullable=True)
     
-    genres: list["Genre"] = Relationship(back_populates="films", link_model=GenreFilm,cascade_delete=True)
-    users: list["User"] = Relationship(back_populates="films", link_model=UserFilm,cascade_delete=True)
+    genres: list["Genre"] = Relationship(back_populates="films", link_model=GenreFilm)
+    users: list["User"] = Relationship(back_populates="films", link_model=UserFilm)
     images: list["Image"] = Relationship(back_populates="film", cascade_delete=True)
 
 class Reaction(SQLModel, table=True):
@@ -53,7 +53,7 @@ class Reaction(SQLModel, table=True):
     review_id: UUID = Field(foreign_key="review.id", ondelete="CASCADE")
     reaction_type: ReactionType = Field()
 
-    review: "Review" = Relationship(back_populates="reaction")
+    review: "Review" = Relationship(back_populates="reactions")
     
 class Review(SQLModel,table = True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
