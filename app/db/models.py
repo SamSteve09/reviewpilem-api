@@ -32,6 +32,7 @@ class User(SQLModel,table = True):
     role: Role = Field(default=Role.USER)
     
     films: list["Film"] = Relationship(back_populates="users", link_model=UserFilm)
+    reactions: list["Reaction"] = Relationship(back_populates="user")
     
 class Film(SQLModel,table = True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
@@ -55,6 +56,7 @@ class Reaction(SQLModel, table=True):
     reaction_type: ReactionType = Field()
 
     review: "Review" = Relationship(back_populates="reactions")
+    user: "User" = Relationship(back_populates="reactions")
     
 class Review(SQLModel,table = True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)

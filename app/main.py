@@ -1,10 +1,9 @@
-from typing import Union
-
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from decouple import config
+
+from app.api.routers import api_router
 
 app = FastAPI()
 
-
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
+app.include_router(api_router, prefix="/api")
