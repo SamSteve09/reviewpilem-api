@@ -14,7 +14,7 @@ def create_token(user_id: UUID, role: str, expires_delta: timedelta, token_type:
         "role": role,
     }
     expire = datetime.now() + expires_delta
-    payload.update({"exp": expire, "type": token_type})
+    payload.update({"exp": expire})
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALG)
 
 def create_access_token(user_id: UUID, role: str):
