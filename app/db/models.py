@@ -25,6 +25,7 @@ class User(SQLModel,table = True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     username: str = Field(min_length=1,max_length=255,unique=True,index=True)
     password_hash: str
+    display_name: str = Field(min_length=1,max_length=255)
     bio: str | None = Field(default=None,sa_column=Column(TEXT, nullable=True))
     is_private: bool = Field(default=False)
     created_at: date = Field(default=date.today())
@@ -34,7 +35,7 @@ class User(SQLModel,table = True):
     
 class Film(SQLModel,table = True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    title: str = Field(min_length=1,max_length=255)
+    title: str = Field(min_length=1,max_length=255,index=True)
     synopsis: str | None = Field(default=None,sa_column=Column(TEXT, nullable=True))
     release_date: date | None = Field(default=None, nullable=True)
     air_status: FilmStatus
@@ -72,6 +73,7 @@ class Review(SQLModel,table = True):
 class Image(SQLModel,table = True):
     id: int | None = Field(default=None, primary_key=True)
     image_url: str = Field(min_length=1,max_length=255,unique=True)
+    image_name: str = Field(min_length=1,max_length=255,unique=True)
     film_id: UUID = Field(foreign_key="film.id", ondelete="CASCADE")
     is_cover: bool = Field(default=False)
     
