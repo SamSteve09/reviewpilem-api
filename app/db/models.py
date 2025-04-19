@@ -76,9 +76,8 @@ class Review(SQLModel,table = True):
     reactions: list["Reaction"] = Relationship(back_populates="review",cascade_delete=True)
     
 class Image(SQLModel,table = True):
-    id: int | None = Field(default=None, primary_key=True)
+    image_id: UUID = Field(default_factory=uuid4, primary_key=True)
     image_url: str = Field(min_length=1,max_length=255,unique=True,nullable=True)
-    image_name: str = Field(default_factory=uuid4,min_length=1,max_length=255,unique=True)
     image_extension: str = Field(min_length=1,max_length=255)
     film_id: UUID = Field(foreign_key="film.id", ondelete="CASCADE")
     is_cover: bool = Field(default=False)
