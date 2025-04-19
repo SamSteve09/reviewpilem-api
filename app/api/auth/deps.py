@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from decouple import config
 from typing import Annotated, Union
+from app.enums import Role
 
 JWT_SECRET = config("JWT_SECRET")
 JWT_ALG = config("JWT_ALG")
@@ -24,9 +25,9 @@ def get_current_user(token: Annotated[Union[str,None], Depends(oauth2_scheme)]):
     except JWTError:
         raise credentials_exception
 
-def require_role(required_role: str):
+def require_role(required_role: Role):
     def role_dependency(current_user=Depends(get_current_user)):
-        if current_user["role"] != required_role:
+        if Role(current_user["role"]) != required_role:
             raise HTTPException(status_code=403, detail="Not enough permissions")
         return current_user
     return role_dependency

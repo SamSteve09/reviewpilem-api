@@ -3,17 +3,20 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from fastapi import Depends
 from app.db.db import db_session
 from app.db.models import Genre
+from .schemas import CreateGenre
 
-async def create_genre(genre: Genre, session: AsyncSession = Depends(db_session)) -> Genre:
+async def create_genre(genre: CreateGenre, session: AsyncSession = Depends(db_session)) -> Genre:
     result = await session.exec(select(Genre).where(Genre.genre_name == genre.genre_name))
     existing = result.first()
     if existing:
         raise ValueError(f"Genre with name {genre.genre_name} already exists")
-
-    session.add(genre)
+    new_genre = Genre(
+        genre_name=genre.genre_name,
+    )
+    session.add(new_genre)
     await session.commit()
-    await session.refresh(genre)
-    return genre
+    await session.refresh(new_genre)
+    return new_genre
 
 async def get_genre_by_id(genre_id: int, session: AsyncSession = Depends(db_session)) -> Genre:
     result = await session.exec(select(Genre).where(Genre.id == genre_id))

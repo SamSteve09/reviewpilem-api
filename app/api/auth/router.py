@@ -1,13 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
-from app.db.db import db_session
-from app.db.models import User
-from .hash import verify_hash
-from .token import create_access_token, create_refresh_token, decode_token
-from .schemas import UserLogin, Token
 from sqlmodel import select
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
+
+from app.db.db import db_session
+from app.db.models import User
+from app.api.users.service import update_password
+
+from .hash import verify_hash,check_needs_rehash
+from .token import create_access_token, create_refresh_token, decode_token
+from .schemas import UserLogin, Token
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -19,7 +22,9 @@ async def login(data: Annotated[OAuth2PasswordRequestForm, Depends()],
     if not user or not verify_hash(user.password_hash, data.password):
         raise HTTPException(status_code=401, detail="Incorrect credentials",headers={"WWW-Authenticate": "Bearer"},)
 
-    token_data = {"sub": user.id, "role": user.role}
+    #token_data = {"sub": user.id, "role": user.role}
+    if check_needs_rehash(user.password_hash):
+        user = await update_password(user.id, data.password)
     
     return Token(
         access_token=create_access_token(user.id, user.role)
