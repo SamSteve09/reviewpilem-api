@@ -28,8 +28,9 @@ class User(SQLModel,table = True):
     display_name: str = Field(min_length=1,max_length=255)
     bio: str | None = Field(default=None,sa_column=Column(TEXT, nullable=True))
     is_private: bool = Field(default=False)
-    created_at: date = Field(default=date.today())
     role: Role = Field(default=Role.USER)
+    created_at: datetime = Field(default_factory=datetime.now)
+    last_updated_at: datetime = Field(default_factory=datetime.now, sa_column_kwargs={"onupdate": datetime.now})
     
     films: list["Film"] = Relationship(back_populates="users", link_model=UserFilm)
     reactions: list["Reaction"] = Relationship(back_populates="user")
@@ -44,6 +45,8 @@ class Film(SQLModel,table = True):
     episode_count: int | None = Field(default=None, nullable=True)
     rating: float | None = Field(default=None, ge=0, le=10, nullable=True)
     rating_count: int | None = Field(default=0, nullable=True)
+    created_at: datetime = Field(default_factory=datetime.now)
+    last_updated_at: datetime = Field(default_factory=datetime.now, sa_column_kwargs={"onupdate": datetime.now})
     
     genres: list["Genre"] = Relationship(back_populates="films", link_model=GenreFilm)
     users: list["User"] = Relationship(back_populates="films", link_model=UserFilm)
@@ -74,8 +77,9 @@ class Review(SQLModel,table = True):
     
 class Image(SQLModel,table = True):
     id: int | None = Field(default=None, primary_key=True)
-    image_url: str = Field(min_length=1,max_length=255,unique=True)
-    image_name: str = Field(min_length=1,max_length=255,unique=True)
+    image_url: str = Field(min_length=1,max_length=255,unique=True,nullable=True)
+    image_name: str = Field(default_factory=uuid4,min_length=1,max_length=255,unique=True)
+    image_extension: str = Field(min_length=1,max_length=255)
     film_id: UUID = Field(foreign_key="film.id", ondelete="CASCADE")
     is_cover: bool = Field(default=False)
     
