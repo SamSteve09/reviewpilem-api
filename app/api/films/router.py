@@ -7,14 +7,15 @@ from app.db.models import Film
 from sqlmodel import select
 from app.enums import Role
 from app.api.auth.deps import require_role
+from uuid import UUID
 
-from .service import create_film
-from .schemas import FilmCreate
+from .service import create_film, get_film_by_id, get_all_film
+from .schemas import FilmCreate, FilmSummary, FilmDetail
 
 router = APIRouter(prefix="/films", tags=["Films"])
 
 @router.post(
-    "/",
+    "",
     status_code=201,
     response_model=None,
     dependencies=[Depends(require_role(Role.ADMIN))],
@@ -37,15 +38,38 @@ async def add_new_film(
         return {"message": "Film created successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
-async def get_film_detail(
-    film_id: str,
+
+@router.get(
+    "",
+    response_model=list[FilmSummary],
+    responses={
+        200: {"description": "Films retrieved successfully"},
+        404: {"description": "No films found"},
+    },
+)
+async def get_film_list(
     session: AsyncSession = Depends(db_session),
 ):
-    statement = select(Film).where(Film.id == film_id)
-    result = await session.exec(statement)
-    film = result.first()
-    
+    films = await get_all_film(session)
+    if not films:
+        raise HTTPException(status_code=404, detail="No films found")
+        
+    return films
+
+@router.get(
+    "/{film_id}",
+    response_model=FilmDetail,
+    responses={
+        200: {"description": "Film retrieved successfully"},
+        404: {"description": "Film not found"},
+    },
+)    
+async def get_film_details(
+    film_id: UUID,
+    session: AsyncSession = Depends(db_session),
+):
+
+    film = await get_film_by_id(film_id, session)
     if not film:
         raise HTTPException(status_code=404, detail="Film not found")
     

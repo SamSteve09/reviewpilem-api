@@ -35,7 +35,7 @@ async def upload_image(image: UploadFile, film_id: UUID, is_cover: bool | None, 
 
     
     
-async def delete_image(self, image_id: UUID, user_id: UUID, session: AsyncSession = Depends(db_session)):
+async def delete_image(image_id: UUID, session: AsyncSession = Depends(db_session)):
     statement = select(Image).where(Image.image_id == image_id)
     result = await session.exec(statement)
     image = result.first()

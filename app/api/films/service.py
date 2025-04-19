@@ -1,12 +1,14 @@
 from fastapi import Depends, UploadFile
 from sqlmodel import select
+
 from sqlmodel.ext.asyncio.session import AsyncSession
+from uuid import UUID
 
 from app.db.db import db_session
 from app.db.models import Film, Genre, GenreFilm, Image
 from app.api.images.service import upload_image
 from app.api.auth.deps import require_role
-from .schemas import FilmCreate
+from .schemas import FilmCreate, FilmSummary, FilmDetail
 from app.enums import FilmStatus, FilmType
 
 from app.api.auth.hash import hash_password
@@ -53,4 +55,68 @@ async def create_film(
     await session.commit()
     await session.refresh(db_film)
     return db_film
+
+async def get_film_by_id(
+    film_id: UUID,
+    session: AsyncSession = Depends(db_session),
+) -> Film:
+    exist = select(Film).where(Film.id == film_id)
+    result = await session.exec(exist)
+    film = result.first()
+    print(film)
+    
+    if not film:
+        raise None
+    
+    return film
+    
+    '''
+        statement = (
+        select(Film)
+        .where(Film.id == film_id)
+        .options(
+            selectinload(Film.genres),
+            selectinload(Film.images),
+        )
+    )
+    result = await session.exec(statement)
+    film = result.first()
+    print(film)
+    return FilmDetail(
+        title=film.title,
+        synopsis=film.synopsis,
+        release_date=film.release_date,
+        air_status=film.air_status,
+        film_type=film.film_type,
+        episode_count=film.episode_count,
+        rating=round(film.rating, 2) if film.rating is not None else None,
+        genres=[genre.genre_name for genre in film.genres],
+        cover_image=next(
+            (f"{img.id}{img.image_extension}" for img in film.images if img.is_cover), None
+        ),
+    )
+    '''
+
+    
+
+async def get_all_film(
+    session: AsyncSession = Depends(db_session),
+) -> list[FilmSummary]:
+    statement = select(Film)
+    result = await session.exec(statement)
+    films = result.all()
+    film_summaries = []
+    for film in films:
+        film_summary = FilmSummary(
+            title=film.title,
+            release_date=film.release_date,
+            air_status=film.air_status,
+            film_type=film.film_type,
+            episode_count=film.episode_count,
+            rating=round(film.rating, 2) if film.rating is not None else None,
+        )
+        film_summaries.append(film_summary)
+            
+    return film_summaries
+
     
