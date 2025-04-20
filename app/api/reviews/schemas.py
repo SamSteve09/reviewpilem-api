@@ -12,6 +12,13 @@ class ReviewCreateResponse(BaseModel):
     rating: int | None = None
     comment: str | None = None
     created_at: datetime | None = None
+
+class ReviewUpdate(BaseModel):
+    id: UUID
+    film_id: UUID
+    rating: int | None = None
+    comment: str | None = None
+    last_updated_at: datetime | None = None
     
 class ReviewResponse(BaseModel):
     film: UUID

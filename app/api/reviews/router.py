@@ -7,9 +7,14 @@ from app.db.db import db_session
 from app.api.user_films.schemas import(
     UserAddFilm, UserFilmResponse
 )
-from app.db.models import Reaction, ReactionType
-from .service import create_review, get_review_by_review_id, react_to_review,unreact_to_review
-from .schemas import ReviewCreate, ReviewCreateResponse
+from app.db.models import Reaction, ReactionType, Review
+from .service import (
+    create_review, get_review_by_review_id,
+    react_to_review,unreact_to_review, delete_review_by_review_id,
+    update_review_by_review_id, get_review_by_film_id,
+    get_review_by_username
+)
+from .schemas import ReviewCreate, ReviewCreateResponse, ReviewUpdate, ReviewResponse
 
 from app.api.users.service import get_user_by_id
 from app.api.auth.deps import get_current_user
@@ -39,6 +44,81 @@ async def write_review(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Film not found")
     
     return film
+
+@router.delete(
+    "/{review_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_review(
+    review_id: UUID,
+    session: AsyncSession = Depends(db_session),
+    sub = Depends(get_current_user),
+):
+    user_id = sub["user_id"]
+    user = await get_user_by_id(user_id, session)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    try:
+        deleted_review = await delete_review_by_review_id(user_id, review_id, session)
+    except PermissionError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not allowed to delete this review")
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return deleted_review
+
+@router.get(
+    "/{movie_id}",
+    response_model=list[Review],
+    status_code=status.HTTP_200_OK,
+)
+async def get_movie_reviews(
+    movie_id: UUID,
+    session: AsyncSession = Depends(db_session),
+):
+    reviews = await get_review_by_film_id(movie_id, session)
+    if not reviews:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No reviews found for this film")
+    return reviews
+
+
+@router.get(
+    "/{username}",
+    response_model=list[Review],
+    status_code=status.HTTP_200_OK,
+)
+async def get_user_reviews(
+    username: str,
+    session: AsyncSession = Depends(db_session),
+):
+    reviews = await get_review_by_username(username, session)
+    if not reviews:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No reviews found for this film")
+    return reviews
+
+
+@router.patch(
+    "/{review_id}",
+    response_model=ReviewUpdate,
+    status_code=status.HTTP_200_OK,
+)
+
+async def update_review(
+    review_id: UUID,
+    request: ReviewCreate,
+    session: AsyncSession = Depends(db_session),
+    sub = Depends(get_current_user),
+):
+    user_id = sub["user_id"]
+    user = await get_user_by_id(user_id, session)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    try:
+        updated_review = await update_review_by_review_id(user_id, review_id, request, session)
+    except PermissionError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not allowed to update this review")
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return updated_review
 
 @router.get(
     "/{review_id}",
@@ -88,7 +168,7 @@ async def delete_reaction(
     user_id = sub["user_id"]
 
     try:
-        deleted_reaction = await unreact_to_review(user_id, review_id, None, session)
+        deleted_reaction = await unreact_to_review(user_id, review_id, session)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     return deleted_reaction
