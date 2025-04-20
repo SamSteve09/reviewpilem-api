@@ -1,11 +1,17 @@
 # ReviewPilem API
 
-ReviewPilem adalah API yang dibangun menggunakan **FastAPI** untuk memungkinkan pengguna melihat, menulis, dan memberikan reaksi terhadap ulasan film.
+ReviewPilem adalah API yang dibangun menggunakan **FastAPI** dan **PostgreSQL** untuk memungkinkan pengguna melihat, menulis, dan memberikan reaksi terhadap ulasan film.
 
 ## Kenapa FastAPI?
 - ✅ Kinerja cepat (asynchronous by default)
 - ✅ Auto-generated documentation (Swagger & ReDoc)
 - ✅ Developer-friendly dan mudah diintegrasikan
+
+---
+
+## Kenapa PostgreSQL?
+- ✅ Permasalahan cocok menggunakan SQL karena saling keterhubungan antar entitas
+- ✅ Membutuhkan ACID yang tinggi
 
 ---
 
