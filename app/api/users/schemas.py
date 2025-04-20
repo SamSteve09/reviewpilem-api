@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 from uuid import UUID
+from app.api.user_films.schemas import UserFilmOut
 
 class UserRegister(BaseModel):
     username: str
@@ -23,5 +24,11 @@ class UserUpdate(BaseModel):
 class UserUpdatePassword(BaseModel):
     password: str
     new_password: str
+
     
+class UserProfile(BaseModel):
+    username: str
+    display_name: str
+    bio: str | None = None
+    films: list[UserFilmOut] | None = None
 

@@ -5,8 +5,11 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.db.db import db_session
-from app.db.models import User
+from app.db.models import User,UserFilm
 from .schemas import UserUpdate
+from app.api.user_films.schemas import UserFilmOut
+from app.api.users.schemas import UserProfile
+from app.api.user_films.service import get_a_user_user_film_list
 
 from app.api.auth.hash import hash_password
 
@@ -43,10 +46,20 @@ async def get_user_by_id(id: UUID, session: AsyncSession = Depends(db_session)):
     result = await session.exec(statement)
     return result.first()
 
-async def get_user_by_username(username: str, session: AsyncSession = Depends(db_session)):
+async def get_user_profile(username: str, session: AsyncSession = Depends(db_session)):
     statement = select(User).where(User.username == username)
     result = await session.exec(statement)
-    return result.first()
+    user = result.first()
+    if result is None:
+        return None
+    raw_user_films = await get_a_user_user_film_list(user.id, session)
+    #films = [UserFilmOut.model_validate(row._mapping) for row in rows]
+    return UserProfile(
+        username=user.username,
+        display_name=user.display_name,
+        bio=user.bio,
+        films=films,
+    )
 
 async def update_password(id: UUID, new_password: str, session: AsyncSession = Depends(db_session)):
     statement = select(User).where(User.id == id)
