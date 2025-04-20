@@ -4,8 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.db.db import db_session
-from app.api.users.schemas import UserUpdate, UserRegister, UserResponse, UserUpdatePassword
-from app.api.users.service import create_user, get_user_by_id, get_user_by_username,update_user_by_id, change_user_password
+from app.api.users.schemas import(
+    UserUpdate, UserRegister, UserResponse, UserUpdatePassword, 
+)
+from app.api.users.service import(
+    create_user, get_user_by_id, get_user_by_username,
+    update_user_by_id, change_user_password,
+)
 from app.api.auth.hash import hash_password
 from app.api.auth.deps import get_current_user
 

@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from uuid import UUID
 
 class UserRegister(BaseModel):
     username: str
@@ -22,5 +23,5 @@ class UserUpdate(BaseModel):
 class UserUpdatePassword(BaseModel):
     password: str
     new_password: str
-
     
+

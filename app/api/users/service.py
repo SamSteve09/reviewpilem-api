@@ -91,3 +91,4 @@ async def update_user_by_id(id: UUID, new_data: UserUpdate, session: AsyncSessio
     await session.refresh(user)
 
     return user
+
