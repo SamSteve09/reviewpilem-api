@@ -66,7 +66,7 @@ async def get_review_by_review_id(
     return result.first()
 
 async def get_review_by_film_id(
-    film_id: UUID, session: AsyncSession = Depends(db_session)
+    film_id: UUID, pagination: dict, session: AsyncSession = Depends(db_session)
 ) -> list[Review] | None:
     statement1 = select(Film).where(Film.id == film_id)
     result1 = await session.exec(statement1)
@@ -75,41 +75,74 @@ async def get_review_by_film_id(
     if film is None:
         raise ValueError("Film not found")
     
-    statement = select(Review).where(Review.film_id == film_id)
+    statement = select(Review,User.username).where(Review.film_id == film_id).join(
+        User, Review.user_id == User.id).offset(pagination["offset"]).limit(pagination["limit"])
     result = await session.exec(statement)
     reviews = result.all()
 
     if not reviews:
         raise ValueError("No reviews found for this film")
 
-    return reviews
+    review_responses = []
+    for review in reviews:
+        
+        review_response = ReviewResponse(
+            film= film.title,
+            author=review[1],
+            rating=review[0].rating,
+            comment=review[0].comment,
+            like_count=review[0].like_count,
+            dislike_count=review[0].dislike_count,
+            created_at=review[0].created_at,
+            last_updated_at=review[0].last_updated_at,
+        )
+        review_responses.append(review_response)
+
+
+    return review_responses
 
 async def get_review_by_username(
-    username: str, session: AsyncSession = Depends(db_session)
-) -> list[Review] | None:
+    username: str, pagination: dict, session: AsyncSession = Depends(db_session)
+) -> list[ReviewResponse] | None:
     statement = select(User.id).where(User.username == username)
     result = await session.exec(statement)
     user = result.first()
 
     if user is None:
         raise ValueError("User not found")
-    
 
-    statement2 = select(Review).where(Review.user_id == user)
+    statement2 = select(Review,Film.title).where(Review.user_id == user).join(Film, Film.id == 
+                Review.film_id).offset(pagination["offset"]).limit(pagination["limit"])
     result2 = await session.exec(statement2)
     reviews = result2.all()
 
     if not reviews:
         raise ValueError("No reviews found for this user")
+    
+    review_responses = []
+    for review in reviews:
+        
+        review_response = ReviewResponse(
+            film= review[1],
+            author=username,
+            rating=review[0].rating,
+            comment=review[0].comment,
+            like_count=review[0].like_count,
+            dislike_count=review[0].dislike_count,
+            created_at=review[0].created_at,
+            last_updated_at=review[0].last_updated_at,
+        )
+        review_responses.append(review_response)
 
-    return reviews
+
+    return review_responses
 
 async def react_to_review(
     user_id: UUID,
     review_id: UUID,
     reaction: ReactionType,
     session: AsyncSession = Depends(db_session),
-) -> Review :
+) -> Reaction:
     #reaction = ReactionType(reaction)
     statement = select(Review).where(Review.id == review_id)
     result = await session.exec(statement)
@@ -127,10 +160,17 @@ async def react_to_review(
         # if the reaction is different, update the like/dislike count
         if existing_reaction.reaction_type == ReactionType.LIKE:
             review.like_count -= 1
-            
+            review.dislike_count += 1
         elif existing_reaction.reaction_type == ReactionType.DISLIKE:
             review.dislike_count -= 1
+            review.like_count += 1
         existing_reaction.reaction_type = reaction
+        session.add(existing_reaction)
+        session.add(review)
+        await session.commit()
+        await session.refresh(existing_reaction)
+        await session.refresh(review)
+        return existing_reaction
     if reaction == ReactionType.LIKE:
         review.like_count += 1
     elif reaction == ReactionType.DISLIKE:
@@ -184,29 +224,28 @@ async def delete_review_by_review_id(
     session: AsyncSession = Depends(db_session),
 ):
     #statement = select(Review,UserFilm).join(UserFilm, UserFilm.id== Review.user_film_id).where(Review.id == review_id)
-    statement = select(Review, UserFilm.user_id,UserFilm.film_id).where(Review.id == review_id).join(UserFilm, UserFilm.id == Review.user_film_id)
+    statement = select(Review).where(Review.id == review_id)
     result = await session.exec(statement)
-    res = result.first()
+    review = result.first()
     
-    if res is None:
+    if review is None:
         raise ValueError("Review not found")
 
-    review = res[0]
-    author_id = res[1]
     # bruh
-    if str(author_id) != str(user_id):
+    if str(review.user_id) != str(user_id):
         raise PermissionError("You are not authorized to delete this review")
     
-    statement2 = select(Film).where(Film.id == res[2])
+    statement2 = select(Film).where(Film.id == review.film_id)
     result2 = await session.exec(statement2)
     film = result2.first()
     
-    film.rating = ((film.rating * film.rating_count) - review.rating) / (film.rating_count - 1)
+    film.rating = ((film.rating * film.rating_count) - review.rating) / (film.rating_count - 1) if film.rating_count > 1 else 0
     film.rating_count -= 1
-    await session.add(film)
+    session.add(film)
     await session.delete(review)
     await session.commit()
     await session.refresh(film)
+    #await session.refresh(review)
     
     return {"message": "Review successfully deleted", "review_id": review_id}
 

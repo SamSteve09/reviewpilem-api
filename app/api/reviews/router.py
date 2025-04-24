@@ -4,9 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.db.db import db_session
-from app.api.user_films.schemas import(
-    UserAddFilm, UserFilmResponse
-)
+from app.deps.pagination import pagination_params
+from app.api.user_films.schemas import UserFilmResponse
 from app.db.models import Reaction, ReactionType, Review
 from .service import (
     create_review, get_review_by_review_id,
@@ -67,30 +66,33 @@ async def delete_review(
     return deleted_review
 
 @router.get(
-    "/{movie_id}",
-    response_model=list[Review],
+    "/film/{film_id}",
+    response_model=list[ReviewResponse],
     status_code=status.HTTP_200_OK,
 )
 async def get_movie_reviews(
-    movie_id: UUID,
+    film_id: UUID,
+    pagination: dict = Depends(pagination_params),
     session: AsyncSession = Depends(db_session),
 ):
-    reviews = await get_review_by_film_id(movie_id, session)
-    if not reviews:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No reviews found for this film")
+    try:
+        reviews = await get_review_by_film_id(film_id, pagination, session)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     return reviews
 
 
 @router.get(
-    "/{username}",
-    response_model=list[Review],
+    "/user/{username}",
+    response_model=list[ReviewResponse],
     status_code=status.HTTP_200_OK,
 )
 async def get_user_reviews(
     username: str,
+    pagination: dict = Depends(pagination_params),
     session: AsyncSession = Depends(db_session),
 ):
-    reviews = await get_review_by_username(username, session)
+    reviews = await get_review_by_username(username, pagination, session)
     if not reviews:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No reviews found for this film")
     return reviews
@@ -171,4 +173,4 @@ async def delete_reaction(
         deleted_reaction = await unreact_to_review(user_id, review_id, session)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    return deleted_reaction
+    return {"message": "Reaction successfully deleted", "review_id": review_id}

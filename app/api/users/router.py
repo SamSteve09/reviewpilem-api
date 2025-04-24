@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.db.db import db_session
+from app.deps.pagination import pagination_params
 from app.api.users.schemas import(
     UserUpdate, UserRegister, UserResponse, UserUpdatePassword, 
 )
@@ -66,8 +67,8 @@ async def update_my_password(request: UserUpdatePassword, session: AsyncSession 
     return user
 
 @router.get("/{username}", response_model=UserProfile)
-async def get_user(username: str, session: AsyncSession = Depends(db_session)):
-    user = await get_user_profile(username, session)
+async def get_user(username: str, pagination: dict = Depends(pagination_params),session: AsyncSession = Depends(db_session)):
+    user = await get_user_profile(username, pagination, session)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

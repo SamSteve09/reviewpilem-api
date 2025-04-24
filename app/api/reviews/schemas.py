@@ -21,7 +21,7 @@ class ReviewUpdate(BaseModel):
     last_updated_at: datetime | None = None
     
 class ReviewResponse(BaseModel):
-    film: UUID
+    film: str
     author : str
     rating: int | None = None
     comment: str | None = None

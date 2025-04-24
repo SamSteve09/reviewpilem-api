@@ -45,16 +45,14 @@ async def get_user_by_id(id: UUID, session: AsyncSession = Depends(db_session)):
     result = await session.exec(statement)
     return result.first()
 
-async def get_user_profile(username: str, session: AsyncSession = Depends(db_session)):
+async def get_user_profile(username: str, pagination: dict, session: AsyncSession = Depends(db_session)):
     statement = select(User).where(User.username == username)
     result = await session.exec(statement)
     user = result.first()
     if result is None:
         return None
-    if user.is_private == False:
-        user_films = await get_a_user_user_film_list(user.id, session)
-    else:
-        user_films = None
+    
+    user_films = await get_a_user_user_film_list(user.id, pagination, session)
     return UserProfile(
         username=user.username,
         display_name=user.display_name,
