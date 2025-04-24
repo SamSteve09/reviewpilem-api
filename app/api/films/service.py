@@ -1,12 +1,12 @@
 from fastapi import Depends, UploadFile
-from sqlmodel import select
+from sqlmodel import select,func
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 from uuid import UUID
 
 from app.db.db import db_session
 from app.db.models import Film, Genre, GenreFilm, Image
-from app.api.images.service import upload_image
+from app.api.images.service import upload_image, get_movie_image_by_id, get_cover_image
 from app.api.auth.deps import require_role
 from .schemas import FilmCreate, FilmSummary, FilmDetail
 from app.enums import FilmStatus, FilmType
@@ -59,30 +59,21 @@ async def create_film(
 async def get_film_by_id(
     film_id: UUID,
     session: AsyncSession = Depends(db_session),
-) -> Film:
+) -> FilmDetail | None:
     exist = select(Film).where(Film.id == film_id)
     result = await session.exec(exist)
     film = result.first()
     print(film)
     
     if not film:
-        raise None
+        raise ValueError(f"Film with id {film_id} does not exist")
     
-    return film
-    
-    '''
-        statement = (
-        select(Film)
-        .where(Film.id == film_id)
-        .options(
-            selectinload(Film.genres),
-            selectinload(Film.images),
-        )
-    )
+    statement = select(Genre.genre_name).join(GenreFilm).where(GenreFilm.film_id == film.id)
     result = await session.exec(statement)
-    film = result.first()
-    print(film)
-    return FilmDetail(
+    genres = result.all()
+    
+    images = await get_movie_image_by_id(film_id, session)
+    film = FilmDetail(
         title=film.title,
         synopsis=film.synopsis,
         release_date=film.release_date,
@@ -90,19 +81,41 @@ async def get_film_by_id(
         film_type=film.film_type,
         episode_count=film.episode_count,
         rating=round(film.rating, 2) if film.rating is not None else None,
-        genres=[genre.genre_name for genre in film.genres],
-        cover_image=next(
-            (f"{img.id}{img.image_extension}" for img in film.images if img.is_cover), None
-        ),
+        genres=genres,
+        images=images,
     )
-    '''
-
-    
+    return film
+        
 
 async def get_all_film(
+    pagination: dict,
     session: AsyncSession = Depends(db_session),
 ) -> list[FilmSummary]:
-    statement = select(Film)
+    statement = select(Film).offset(pagination["offset"]).limit(pagination["limit"])
+    result = await session.exec(statement)
+    films = result.all()
+    
+    film_summaries = []
+    for film in films:
+        film_summary = FilmSummary(
+            title=film.title,
+            release_date=film.release_date,
+            air_status=film.air_status,
+            film_type=film.film_type,
+            episode_count=film.episode_count,
+            rating=round(film.rating, 2) if film.rating is not None else None,
+            cover_image= await get_cover_image(film.id, session),
+        )
+        film_summaries.append(film_summary)
+            
+    return film_summaries
+
+async def search_film_by_title(
+    title: str,
+    pagination: dict,
+    session: AsyncSession = Depends(db_session),
+) -> list[FilmSummary]:
+    statement = select(Film).where(func.lower(Film.title).contains(title.lower())).offset(pagination["offset"]).limit(pagination["limit"])
     result = await session.exec(statement)
     films = result.all()
     film_summaries = []
@@ -118,5 +131,3 @@ async def get_all_film(
         film_summaries.append(film_summary)
             
     return film_summaries
-
-    

@@ -20,6 +20,7 @@ class FilmSummary(BaseModel):
     film_type: str
     episode_count: int | None = None
     rating: float | None = None
+    cover_image: str | None = None
     
 class FilmDetail(FilmSummary):
     title: str

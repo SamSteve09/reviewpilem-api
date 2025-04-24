@@ -3,17 +3,35 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import Annotated
 from pydantic import TypeAdapter
 from app.db.db import db_session
+from app.deps.pagination import pagination_params
 from app.db.models import Film
 from sqlmodel import select
 from app.enums import Role
 from app.api.auth.deps import require_role
 from uuid import UUID
 
-from .service import create_film, get_film_by_id, get_all_film
+from .service import create_film, get_film_by_id, get_all_film, search_film_by_title
 from .schemas import FilmCreate, FilmSummary, FilmDetail
 
 router = APIRouter(prefix="/films", tags=["Films"])
-
+@router.get(
+    "/search",
+    response_model=list[FilmSummary],
+    responses={
+        200: {"description": "Films retrieved successfully"},
+        404: {"description": "No films found"},
+    },
+)
+async def search_films(
+    title: str,
+    session: AsyncSession = Depends(db_session),
+    pagination: dict = Depends(pagination_params)
+):
+    films = await search_film_by_title(title, pagination, session)
+    if not films:
+        raise HTTPException(status_code=404, detail="No films found")
+        
+    return films
 @router.post(
     "",
     status_code=201,
@@ -48,9 +66,10 @@ async def add_new_film(
     },
 )
 async def get_film_list(
-    session: AsyncSession = Depends(db_session),
+    pagination: dict = Depends(pagination_params),
+    session: AsyncSession = Depends(db_session)
 ):
-    films = await get_all_film(session)
+    films = await get_all_film(pagination, session)
     if not films:
         raise HTTPException(status_code=404, detail="No films found")
         
@@ -74,3 +93,4 @@ async def get_film_details(
         raise HTTPException(status_code=404, detail="Film not found")
     
     return film
+

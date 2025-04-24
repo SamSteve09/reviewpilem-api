@@ -54,5 +54,38 @@ async def delete_image(image_id: UUID, session: AsyncSession = Depends(db_sessio
     
     await session.commit()
     
+async def get_movie_image_by_id(
+    film_id: UUID, session: AsyncSession = Depends(db_session)
+):
+    statement = select(Image).where(Image.film_id == film_id)
+    result = await session.exec(statement)
+    image = result.all()
+
+    if image == None:
+        raise FileNotFoundError()
+    
+    image_path = []
+    for img in image:
+        path = f"{IMAGE_PATH}/{str(img.image_id)}.{img.image_extension.split('/')[1]}"
+        image_path.append(path)
+
+    return image_path
+
+async def get_cover_image(
+    film_id: UUID, session: AsyncSession = Depends(db_session)
+):
+    statement = select(Image).where(Image.film_id == film_id and Image.is_cover == True)
+    result = await session.exec(statement)
+    image = result.first()
+
+    if image == None:
+        raise FileNotFoundError()
+    
+    path = f"{IMAGE_PATH}/{str(image.image_id)}.{image.image_extension.split('/')[1]}"
+    
+    return path
+
+
+    
 
         
