@@ -7,6 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app.db.db import db_session
 from app.db.models import User,Film, UserFilm
 from app.enums import FilmStatus, UserFilmStatus
+from .schemas import UserFilmOut
 
 
 async def create_user_film(id: UUID, film_id: UUID, status: str, progress: int, session: AsyncSession = Depends(db_session)):
@@ -27,6 +28,8 @@ async def create_user_film(id: UUID, film_id: UUID, status: str, progress: int, 
 
     if film.air_status == FilmStatus.NOT_YET_AIRED and (status != "plan_to_watch" or progress > 0):
         raise ValueError(f"Film with id {film_id} is not yet aired")
+    elif progress > film.episode_count:
+        raise ValueError(f"Progress cannot be greater than {film.episode_count}")
     
     statement3 = select(UserFilm).where(UserFilm.film_id == film_id and UserFilm.user_id == id)
     result3 = await session.exec(statement3)
@@ -60,10 +63,12 @@ async def update_user_film_by_id(
     statement2 = select(Film).where(Film.id == film_id)
     result2 = await session.exec(statement2)
     film = result2.first()
-    user_film.status = UserFilmStatus(status)
+    user_film.status = UserFilmStatus(status) 
     
     if film.air_status == FilmStatus.NOT_YET_AIRED and (status != "plan_to_watch" or progress > 0):
         raise ValueError(f"Film with id {film_id} is not yet aired")
+    elif progress > film.episode_count:
+        raise ValueError(f"Progress cannot be greater than {film.episode_count}")
 
     user_film.progress = progress
 
@@ -75,7 +80,7 @@ async def update_user_film_by_id(
 
 async def get_a_user_user_film_list(
     id: UUID, session: AsyncSession = Depends(db_session)
-):
+) -> list[UserFilmOut] | None:
     statement = select(User).where(User.id == id)
     result = await session.exec(statement)
     user = result.first()
@@ -83,10 +88,10 @@ async def get_a_user_user_film_list(
     if user is None:
         raise ValueError(f"User with id {id} does not exist")
     
-
-    # A film title can be the same, but the release date can be different
-    statement2 = select(UserFilm.film_id,UserFilm.status,UserFilm.progress).where(UserFilm.user_id == user.id)
+    statement2 = select(UserFilm,Film.title).join(Film).where(UserFilm.user_id == user.id and UserFilm.film_id == Film.id)
     result2 = await session.exec(statement2)
     user_film = result2.all()
-
-    return user_film
+    user_films : list[UserFilmOut] = []
+    for row in user_film:
+        user_films.append(UserFilmOut(film_title=row[1],status=row[0].status,progress=row[0].progress))
+    return user_films

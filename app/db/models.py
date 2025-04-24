@@ -9,11 +9,11 @@ class GenreFilm(SQLModel,table = True):
     genre_id: int | None = Field(default=None,primary_key=True, foreign_key="genre.id",ondelete="CASCADE")
     
 class UserFilm(SQLModel,table = True):
-    id: int | None = Field(default=None,primary_key=True)
+    
+    user_id: UUID = Field(primary_key=True, foreign_key="user.id", ondelete="CASCADE")
+    film_id: UUID = Field(primary_key=True, foreign_key="film.id", ondelete="CASCADE")
     status: UserFilmStatus
-    user_id: UUID = Field(default_factory=uuid4, foreign_key="user.id", ondelete="CASCADE")
-    film_id: UUID = Field(default_factory=uuid4, foreign_key="film.id", ondelete="CASCADE")
-    progress: int = Field(default=0)
+    progress: int = Field(default=0, ge=0, le=2000)
     
 class Genre(SQLModel,table = True):
     id: int = Field(default=None, primary_key=True)
@@ -63,12 +63,12 @@ class Reaction(SQLModel, table=True):
     
 class Review(SQLModel,table = True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    # delete review if film is deleted from user list (implicitly delete if either film or user is also deleted)
-    user_film_id: int = Field(foreign_key="userfilm.id",ondelete="CASCADE")
+    user_id: UUID = Field(foreign_key="user.id", ondelete="CASCADE")
+    film_id: UUID = Field(foreign_key="film.id", ondelete="CASCADE")
     rating: int = Field(ge=1, le=10)
     comment: str | None = Field(default=None,sa_column=Column(TEXT, nullable=True))
-    like_count: int = Field(default=0)
-    dislike_count: int = Field(default=0)
+    like_count: int = Field(default=0,ge=0)
+    dislike_count: int = Field(default=0,ge=0)
     created_at: datetime = Field(default_factory=datetime.now)
     last_updated_at: datetime = Field(default_factory=datetime.now, sa_column_kwargs={"onupdate": datetime.now})
     

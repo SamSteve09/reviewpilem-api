@@ -36,7 +36,8 @@ async def create_review(
         raise ValueError("You cannot add a review to a film that you haven't watched yet")
 
     review = Review(
-        user_film_id=user_film.id,
+        user_id=user_id,
+        film_id=film_id,
         rating=request.rating,
         comment=request.comment,
     )
@@ -67,17 +68,16 @@ async def get_review_by_review_id(
 async def get_review_by_film_id(
     film_id: UUID, session: AsyncSession = Depends(db_session)
 ) -> list[Review] | None:
-
-    statement = select(UserFilm.id).where(UserFilm.film_id == film_id)
+    statement1 = select(Film).where(Film.id == film_id)
+    result1 = await session.exec(statement1)
+    film = result1.first()
+    
+    if film is None:
+        raise ValueError("Film not found")
+    
+    statement = select(Review).where(Review.film_id == film_id)
     result = await session.exec(statement)
-    user_film_ids = result.all()
-
-    if not user_film_ids:
-        raise ValueError("No reviews found for this film")
-
-    statement2 = select(Review).where(Review.user_film_id.in_(user_film_ids))
-    result2 = await session.exec(statement2)
-    reviews = result2.all()
+    reviews = result.all()
 
     if not reviews:
         raise ValueError("No reviews found for this film")
@@ -90,19 +90,12 @@ async def get_review_by_username(
     statement = select(User.id).where(User.username == username)
     result = await session.exec(statement)
     user = result.first()
-    
+
     if user is None:
         raise ValueError("User not found")
     
-    
-    statement2 = select(UserFilm.id).where(UserFilm.user_id == user)
-    result2 = await session.exec(statement)
-    user_film_ids = result.all()
 
-    if not user_film_ids:
-        raise ValueError("No reviews found for this film")
-
-    statement2 = select(Review).where(Review.user_film_id.in_(user_film_ids))
+    statement2 = select(Review).where(Review.user_id == user)
     result2 = await session.exec(statement2)
     reviews = result2.all()
 

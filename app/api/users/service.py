@@ -52,13 +52,13 @@ async def get_user_profile(username: str, session: AsyncSession = Depends(db_ses
     user = result.first()
     if result is None:
         return None
-    raw_user_films = await get_a_user_user_film_list(user.id, session)
+    user_films = await get_a_user_user_film_list(user.id, session)
     #films = [UserFilmOut.model_validate(row._mapping) for row in rows]
     return UserProfile(
         username=user.username,
         display_name=user.display_name,
         bio=user.bio,
-        films=films,
+        films=user_films,
     )
 
 async def update_password(id: UUID, new_password: str, session: AsyncSession = Depends(db_session)):

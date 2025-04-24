@@ -7,8 +7,6 @@ class UserAddFilm(BaseModel):
     
 class UserFilmResponse(BaseModel):
     film_id: UUID
-    film_title: str | None = None
-    film_release_date: str | None = None
     status: str | None = None
     progress: int | None = None
     
@@ -20,6 +18,6 @@ class UserFilmListResponse(BaseModel):
         orm_mode = True
         
 class UserFilmOut(BaseModel):
-    film_id: UUID
+    film_title: str
     status: str
     progress: int
