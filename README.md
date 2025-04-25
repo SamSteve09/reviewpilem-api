@@ -16,6 +16,8 @@ ReviewPilem adalah API yang dibangun menggunakan **FastAPI** dan **PostgreSQL** 
 ---
 
 ## Fitur yang Sudah Tersedia
+- ✅ **Pagination**
+- ✅ **List visibility**
 
 - ✅ **Manajemen Genre**
   - Tambah genre
@@ -42,21 +44,14 @@ ReviewPilem adalah API yang dibangun menggunakan **FastAPI** dan **PostgreSQL** 
   - Dislike review
   - Unreact
 
-- ✅ **Daftar Film**
+- ✅ **Film**
   - Lihat semua film
+  - Lihat detail film
+  - Lihat list film user
+  - Pencarian film berdasarkan judul
 
----
-
-## Fitur yang Belum Selesai
-
-- ❌ Lihat detail film
-- ❌ Lihat list film dengan pagination/sorting
-- ❌ Pencarian film berdasarkan judul
 
 ---
 
 ## Dokumentasi API
-FastAPI menyediakan dokumentasi secara otomatis di endpoint berikut:
-
-- link: https://drive.google.com/file/d/13yOiS_Y__SyOPWg1pCgnBmgQYRZQ6XBX/view?usp=sharing
-- Atau dengan akses /docs
+FastAPI menyediakan dokumentasi secara otomatis di endpoint /docs, untuk file json dokumentasi api juga sudah di repository ini.
