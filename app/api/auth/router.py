@@ -10,7 +10,7 @@ from app.api.users.service import update_password
 
 from .hash import verify_hash,check_needs_rehash
 from .token import create_access_token, create_refresh_token, decode_token
-from .schemas import UserLogin, Token
+from .schemas import Token
 
 from app.api.response_code import common_responses
 

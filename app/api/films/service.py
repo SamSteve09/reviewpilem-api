@@ -5,13 +5,11 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from uuid import UUID
 
 from app.db.db import db_session
-from app.db.models import Film, Genre, GenreFilm, Image
+from app.db.models import Film, Genre, GenreFilm
 from app.api.images.service import upload_image, get_movie_image_by_id, get_cover_image
-from app.api.auth.deps import require_role
 from .schemas import FilmCreate, FilmSummary, FilmDetail
 from app.enums import FilmStatus, FilmType
 
-from app.api.auth.hash import hash_password
 
 async def create_film(
     film: FilmCreate, images: list[UploadFile],
@@ -81,6 +79,7 @@ async def get_film_by_id(
         film_type=film.film_type,
         episode_count=film.episode_count,
         rating=round(film.rating, 2) if film.rating is not None else None,
+        rating_count=film.rating_count,
         genres=genres,
         images=images,
     )
@@ -98,6 +97,7 @@ async def get_all_film(
     film_summaries = []
     for film in films:
         film_summary = FilmSummary(
+            id=film.id,
             title=film.title,
             release_date=film.release_date,
             air_status=film.air_status,
@@ -121,6 +121,7 @@ async def search_film_by_title(
     film_summaries = []
     for film in films:
         film_summary = FilmSummary(
+            id=film.id,
             title=film.title,
             release_date=film.release_date,
             air_status=film.air_status,
