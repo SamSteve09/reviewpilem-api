@@ -6,6 +6,7 @@ from sqlalchemy.sql import expression
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.db.db import db_session
+from app.exceptions import UniqueConstraintViolation
 from app.db.models import Review, UserFilm, Film, Reaction, User
 from app.enums import UserFilmStatus, ReactionType
 
@@ -156,7 +157,7 @@ async def react_to_review(
     existing_reaction = result2.first()
     if existing_reaction: 
         if existing_reaction.reaction_type == reaction:
-            raise ValueError("You have already reacted to this review, use delete method to remove your reaction")
+            raise UniqueConstraintViolation("You have already reacted the same reaction to this review, use delete method to remove your reaction")
         # if the reaction is different, update the like/dislike count
         if existing_reaction.reaction_type == ReactionType.LIKE:
             review.like_count -= 1
@@ -223,7 +224,6 @@ async def delete_review_by_review_id(
     review_id: UUID,
     session: AsyncSession = Depends(db_session),
 ):
-    #statement = select(Review,UserFilm).join(UserFilm, UserFilm.id== Review.user_film_id).where(Review.id == review_id)
     statement = select(Review).where(Review.id == review_id)
     result = await session.exec(statement)
     review = result.first()
@@ -245,7 +245,6 @@ async def delete_review_by_review_id(
     await session.delete(review)
     await session.commit()
     await session.refresh(film)
-    #await session.refresh(review)
     
     return {"message": "Review successfully deleted", "review_id": review_id}
 
@@ -255,20 +254,17 @@ async def update_review_by_review_id(
     request: ReviewCreate,
     session: AsyncSession = Depends(db_session),
 ) -> Review | None:
-    statement = select(Review,UserFilm.user_id,UserFilm.film_id).where(Review.id == review_id).join(UserFilm, UserFilm.id == Review.user_film_id)
+    statement = select(Review).where(Review.id == review_id)
     result = await session.exec(statement)
-    res = result.first()
+    review = result.first()
     
-    if res is None:
+    if review is None:
         raise ValueError("Review not found")
     
-    review = res[0]
-    author_id = res[1]
+    if str(review.user_id) != str(user_id):
+        raise PermissionError("You are not authorized to update this review")
     
-    if str(author_id) != str(user_id):
-        raise ValueError("You are not authorized to update this review")
-    
-    statement2 = select(Film).where(Film.id == res[2])
+    statement2 = select(Film).where(Film.id == review.film_id)
     result2 = await session.exec(statement2)
     film = result2.first()
     film.rating = ((film.rating * film.rating_count) - review.rating + request.rating) / film.rating_count
@@ -283,7 +279,7 @@ async def update_review_by_review_id(
     
     review = ReviewUpdate(
         id=review.id,
-        film_id=res[2],
+        film_id=review.film_id,
         rating=review.rating,
         comment=review.comment,
         last_updated_at=review.last_updated_at,
