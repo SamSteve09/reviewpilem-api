@@ -79,7 +79,7 @@ async def update_user_film_by_id(
     return user_film
 
 async def get_a_user_user_film_list(
-    id: UUID, pagination: dict, session: AsyncSession = Depends(db_session)
+    id: UUID, pagination: dict, from_self: bool, session: AsyncSession = Depends(db_session)
 ) -> list[UserFilmOut] | None:
     statement = select(User).where(User.id == id).offset(pagination["offset"]).limit(pagination["limit"])
     result = await session.exec(statement)
@@ -87,7 +87,7 @@ async def get_a_user_user_film_list(
     
     if user is None:
         raise ValueError(f"User with id {id} does not exist")
-    elif user.is_private == True:
+    elif user.is_private == True and from_self == False:
         return None
     
     statement2 = select(UserFilm,Film.title).join(Film).where(UserFilm.user_id == user.id and UserFilm.film_id == Film.id)

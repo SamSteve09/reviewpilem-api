@@ -12,9 +12,17 @@ from .hash import verify_hash,check_needs_rehash
 from .token import create_access_token, create_refresh_token, decode_token
 from .schemas import UserLogin, Token
 
+from app.api.response_code import common_responses
+
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, responses={ 401: {**common_responses[401], "content": {
+    "application/json": {
+        "example": {
+            "detail": "Incorrect credentials"
+        }
+    }
+    }},500: {**common_responses[500]}})
 async def login(data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: AsyncSession = Depends(db_session)) -> Token:
     result = await session.exec(select(User).where(User.username == data.username))

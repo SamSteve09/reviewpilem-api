@@ -16,7 +16,7 @@ async def create_user(username: str, password_hash: str, display_name: str, sess
     result = await session.exec(select(User).where(User.username == username))
     existing = result.first() 
     if existing:
-        raise ValueError(f"Username with name {User.username} already used")
+        raise ValueError(f"Username with name {username} already used")
     new_user = User(
         username=username,
         password_hash=password_hash,
@@ -45,40 +45,30 @@ async def get_user_by_id(id: UUID, session: AsyncSession = Depends(db_session)):
     result = await session.exec(statement)
     return result.first()
 
-async def get_user_profile(username: str, pagination: dict, session: AsyncSession = Depends(db_session)):
+async def get_user_profile(username: str, pagination: dict, from_self: bool, session: AsyncSession = Depends(db_session)):
     statement = select(User).where(User.username == username)
     result = await session.exec(statement)
     user = result.first()
-    if result is None:
-        return None
+    if user is None:
+        raise ValueError(f"User with username {username} does not exist")
     
-    user_films = await get_a_user_user_film_list(user.id, pagination, session)
+    user_films = await get_a_user_user_film_list(user.id, pagination, from_self, session)
     return UserProfile(
         username=user.username,
         display_name=user.display_name,
         bio=user.bio,
+        is_private=user.is_private,
+        created_at=user.created_at,
         films=user_films,
     )
 
-async def update_password(id: UUID, new_password: str, session: AsyncSession = Depends(db_session)):
-    statement = select(User).where(User.id == id)
-    result = await session.exec(statement)
-    user = result.one()
-
-    new_hash = hash_password(new_password)
-    user.password_hash = new_hash
-    session.add(user)
-    await session.commit()
-    await session.refresh(user)
-
-    return user
-
 async def change_user_password(id: UUID, old_password: str, new_password: str, session: AsyncSession = Depends(db_session)):
-    statement = select(User).where(User.id == id and User.password_hash == hash_password(old_password))
+    hashed_password = hash_password(old_password)
+    statement = select(User).where(User.id == id and User.password_hash == hashed_password)
     result = await session.exec(statement)
-    user = result.one()
+    user = result.first()
     if user is None:
-        return None
+        raise ValueError("Old password is incorrect")
     new_hash = hash_password(new_password)
     user.password_hash = new_hash
     session.add(user)

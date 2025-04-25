@@ -30,5 +30,7 @@ class UserProfile(BaseModel):
     username: str
     display_name: str
     bio: str | None = None
+    is_private: bool | None
+    created_at: datetime
     films: list[UserFilmOut] | None = None
 

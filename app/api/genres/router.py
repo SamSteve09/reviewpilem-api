@@ -19,7 +19,7 @@ responses={409: {
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": "Genre with name Action already exists"
+                        "detail": "Genre with name {genre_name} already exists"
                     }
                 }
             }
@@ -48,13 +48,13 @@ async def get_genres(
                 responses={404: {**common_responses[404], "content": {
                     "application/json": {
                         "example": {
-                            "detail": "Genre with id 1 does not exist"
+                            "detail": "Genre with id {genre_id} does not exist"
                         }
                     }}},
                     409: {**common_responses[409], "content": {
                         "application/json": {
                             "example": {
-                                "detail": "Genre name 'Action' is already used."
+                                "detail": "Genre name {genre_name} is already used."
                             }
                     }}},
                     401: {**common_responses[401]}, 

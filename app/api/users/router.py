@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.db.db import db_session
+from app.api.response_code import common_responses
 from app.deps.pagination import pagination_params
 from app.api.users.schemas import(
     UserUpdate, UserRegister, UserResponse, UserUpdatePassword, 
@@ -19,7 +20,17 @@ from app.api.auth.deps import get_current_user
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
-@router.post("/register", response_model=UserResponse, status_code=201)
+@router.post("/register", response_model=UserResponse, status_code=201,
+             responses={
+        400: {**common_responses[400], "content": {
+            "application/json": {
+                "example": {
+                    "detail": "Username with name {username} already used"
+                }
+            }
+        }},
+        500: common_responses[500]
+    })
 async def register_user(
     request: UserRegister,
     session: AsyncSession = Depends(db_session)
@@ -32,47 +43,44 @@ async def register_user(
     return new_user
     
 
-@router.get("/me", response_model=UserResponse)
-async def get_me(session: AsyncSession = Depends(db_session), current_user=Depends(get_current_user)):
+@router.get("/me", response_model=UserProfile, responses={401: {**common_responses[401],},500: common_responses[500]})
+async def get_me(session: AsyncSession = Depends(db_session),pagination: dict = Depends(pagination_params), current_user=Depends(get_current_user)):
     current_user = await get_user_by_id(UUID(current_user["user_id"]), session)
-    if current_user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User does not exist",
-        )
+    profile = await get_user_profile(current_user.username, pagination, True, session)
     
-    return current_user
+    return profile
 
-@router.patch("/me")
+@router.patch("/me", response_model=UserResponse, responses={401: {**common_responses[401], 500: common_responses[500]}})
 async def update_my_data(request: UserUpdate, session: AsyncSession = Depends(db_session), sub = Depends(get_current_user)):
 
     user = await update_user_by_id(sub["user_id"], request, session)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User does not exist",
-        )
     
     return user
 
 @router.patch("/me/password")
 async def update_my_password(request: UserUpdatePassword, session: AsyncSession = Depends(db_session), sub = Depends(get_current_user)):
-    user = await change_user_password(sub["user_id"], request.password, request.new_password, session)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User does not exist",
-        )
     
-    return user
+    try:
+        user = await change_user_password(sub["user_id"], request.password, request.new_password, session)
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    
+    return {"message": "Password updated successfully"}
 
-@router.get("/{username}", response_model=UserProfile)
+@router.get("/{username}", response_model=UserProfile, responses = {
+    404: {**common_responses[404], "content": {
+        "application/json": {
+            "example": {
+                "detail": "User does not exist"
+            }
+        }
+    }},
+    500: common_responses[500]
+})
 async def get_user(username: str, pagination: dict = Depends(pagination_params),session: AsyncSession = Depends(db_session)):
-    user = await get_user_profile(username, pagination, session)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User does not exist",
-        )
-    
+    try:
+        user = await get_user_profile(username, pagination, False, session)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
     return user
