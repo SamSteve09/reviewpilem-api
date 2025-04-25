@@ -24,6 +24,7 @@ router = APIRouter(prefix="/reviews", tags=["Reviews"])
     "/{film_id}",
     response_model=ReviewCreateResponse,
     status_code=status.HTTP_201_CREATED,
+    
 )
 async def write_review(
     film_id: UUID,

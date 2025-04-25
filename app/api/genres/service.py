@@ -4,12 +4,12 @@ from fastapi import Depends
 from app.db.db import db_session
 from app.db.models import Genre
 from .schemas import CreateGenre
-
+from app.exceptions import UniqueConstraintViolation
 async def create_genre(genre: CreateGenre, session: AsyncSession = Depends(db_session)) -> Genre:
     result = await session.exec(select(Genre).where(Genre.genre_name == genre.genre_name))
     existing = result.first()
     if existing:
-        raise ValueError(f"Genre with name {genre.genre_name} already exists")
+        raise UniqueConstraintViolation(f"Genre with name {genre.genre_name} already exists")
     new_genre = Genre(
         genre_name=genre.genre_name,
     )
@@ -40,7 +40,7 @@ async def update_genre_by_id(genre: Genre, session: AsyncSession = Depends(db_se
     )
     conflict = result.first()
     if conflict:
-        raise ValueError(f"Genre name '{genre.genre_name}' is already used.")
+        raise UniqueConstraintViolation(f"Genre name '{genre.genre_name}' is already used.")
     existing_genre.genre_name = genre.genre_name
     await session.commit()
     await session.refresh(existing_genre)

@@ -1,12 +1,59 @@
+from pydantic import BaseModel
+from fastapi import status
+
+class ErrorResponse(BaseModel):
+    detail: str
+    
 common_responses = {
-    200: {"description": "OK"},
-    201: {"description": "Created"},
-    202: {"description": "Accepted"},
-    400: {"description": "Bad Request"},
-    401: {"description": "Unauthorized"},
-    403: {"description": "Forbidden"},
-    404: {"description": "Not Found"},
-    409: {"description": "Conflict"},
-    422: {"description": "Validation Error"},
-    500: {"description": "Internal Server Error"},
+    status.HTTP_200_OK: {"description": "OK"},
+    status.HTTP_201_CREATED: {"description": "Created"},
+    status.HTTP_400_BAD_REQUEST: {
+        "description": "Bad Request",
+        "model": ErrorResponse,
+    },
+    status.HTTP_401_UNAUTHORIZED: {
+        "description": "Unauthorized",
+        "model": ErrorResponse,
+        "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Not authenticated"
+                    }
+                }
+        }
+    },
+    status.HTTP_403_FORBIDDEN: {
+        "description": "Forbidden",
+        "model": ErrorResponse,
+        "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Not enough permissions"
+                    }
+                }
+        }
+    },
+    status.HTTP_404_NOT_FOUND: {
+        "description": "Not Found",
+        "model": ErrorResponse,
+    },
+    status.HTTP_409_CONFLICT: {
+        "description": "Conflict",
+        "model": ErrorResponse,
+    },
+    status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        "description": "Validation Error",
+        "model": ErrorResponse,  # Optional
+    },
+    status.HTTP_500_INTERNAL_SERVER_ERROR: {
+        "description": "Internal Server Error",
+        "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Internal Server Error"
+                    }
+                }
+        }
+        
+    },
 }
