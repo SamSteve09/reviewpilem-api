@@ -52,7 +52,7 @@ async def create_user_film(id: UUID, film_id: UUID, status: str, progress: int, 
 async def update_user_film_by_id(
     id: UUID, film_id : UUID, status: str, progress: int, session: AsyncSession = Depends(db_session)
 ):
-    # can use join, but for simplicity using two queries
+
     statement = select(UserFilm).where(UserFilm.film_id == film_id and UserFilm.user_id == id)
     result = await session.exec(statement)
     user_film = result.first()
@@ -88,12 +88,12 @@ async def get_a_user_user_film_list(
     if user is None:
         raise ValueError(f"User with id {id} does not exist")
     elif user.is_private == True and from_self == False:
-        return None
+        raise PermissionError(f"User with id {id} has private film list")
     
-    statement2 = select(UserFilm,Film.title).join(Film).where(UserFilm.user_id == user.id and UserFilm.film_id == Film.id)
+    statement2 = select(UserFilm,Film).join(Film).where(UserFilm.user_id == user.id and UserFilm.film_id == Film.id)
     result2 = await session.exec(statement2)
     user_film = result2.all()
     user_films : list[UserFilmOut] = []
     for row in user_film:
-        user_films.append(UserFilmOut(film_title=row[1],status=row[0].status,progress=row[0].progress))
+        user_films.append(UserFilmOut(film_id=row[1].id,film_title=row[1].title,status=row[0].status,progress=row[0].progress))
     return user_films

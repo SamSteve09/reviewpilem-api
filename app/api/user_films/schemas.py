@@ -18,6 +18,7 @@ class UserFilmListResponse(BaseModel):
         orm_mode = True
         
 class UserFilmOut(BaseModel):
+    film_id: UUID
     film_title: str
     status: str
     progress: int
